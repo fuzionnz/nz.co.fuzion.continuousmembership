@@ -28,10 +28,8 @@ class CRM_Continuousmembership_BAO_Continuousmembership {
   /**
    * Get num terms for all memberships present in the contact.
    */
-  public static function getNumTermsForExistingMembership($contactId = NULL) {
-    $json = FALSE;
+  public static function getNumTermsForExistingMembership($contactId = NULL, $ajax = TRUE) {
     if (empty($contactId)) {
-      $json = TRUE;
       $contactId = CRM_Utils_Type::escape($_GET['cid'], 'Integer');
     }
     $existingMembership = civicrm_api3('Membership', 'get', [
@@ -43,9 +41,10 @@ class CRM_Continuousmembership_BAO_Continuousmembership {
     }
     $numTerms = [];
     foreach ($existingMembership['values'] as $membership) {
-      $numTerms[$membership['membership_name']] = self::getNumTerms($contactId, $membership['membership_type_id']);
+      $key = $ajax ? $membership['membership_name'] : $membership['membership_type_id'];
+      $numTerms[$key] = self::getNumTerms($contactId, $membership['membership_type_id']);
     }
-    if (!$json) {
+    if (!$ajax) {
       return $numTerms;
     }
 

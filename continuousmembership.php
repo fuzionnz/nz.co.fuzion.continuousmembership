@@ -205,8 +205,24 @@ function continuousmembership_civicrm_preProcess($formName, &$form) {
 }
 
 function continuousmembership_civicrm_postProcess($formName, &$form) {
-  if ($formName == 'CRM_Contribute_Form_Contribution_Main' && !empty($form->_params['num_terms'])) {
-    CRM_Continuousmembership_BAO_Continuousmembership::modifyTotalAmountInParams($formName, $form);
+  if ($formName == 'CRM_Contribute_Form_Contribution_Main') {
+    if (empty($form->_contactID)) {
+      if (empty($form->_submitValues['select_contact_id'])) {
+        $contactID = $form->getContactID();
+      }
+      else {
+        $contactID = $form->_submitValues['select_contact_id'];
+      }
+    }
+    else {
+      $contactID = $form->_contactID;
+    }
+    $numTerms = CRM_Continuousmembership_BAO_Continuousmembership::getNumTermsForExistingMembership($contactID, FALSE);
+    if (!empty($form->_params['num_terms'])
+      && is_numeric($form->_params['selectMembership'])
+      && in_array($form->_params['selectMembership'], array_keys($numTerms))) {
+      CRM_Continuousmembership_BAO_Continuousmembership::modifyTotalAmountInParams($formName, $form);
+    }
   }
 }
 
