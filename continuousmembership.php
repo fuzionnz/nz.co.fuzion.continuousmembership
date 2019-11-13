@@ -161,32 +161,38 @@ function continuousmembership_civicrm_pre($op, $objectName, $id, &$params) {
 }
 
 function continuousmembership_civicrm_buildForm($formName, &$form) {
-  if ($formName == 'CRM_Contribute_Form_Contribution_Main' && !empty($form->_currentMemberships)) {
+  if ($formName == 'CRM_Contribute_Form_Contribution_Main' && !empty($form->_membershipBlock)) {
     $defaults = [];
-    foreach ($form->_currentMemberships as $memType) {
-      $currentMembership = CRM_Member_BAO_Membership::getContactMembership(
-        $form->_contactID,
-        $memType,
-        0,
-        $form->_membershipId,
-        TRUE
-      );
-      $memtypeDetails = civicrm_api3('MembershipType', 'get', [
-        'sequential' => 1,
-        'return' => ["name"],
-        'id' => $memType,
-      ])['values'][0];
-      if (!empty($currentMembership)) {
-        $defaults['num_terms'] = CRM_Continuousmembership_BAO_Continuousmembership::getNumTerms($form->_contactID, $memType);
-        CRM_Core_Resources::singleton()->addVars('num_terms', [$memtypeDetails['name'] => $defaults['num_terms']]);
+    CRM_Core_Resources::singleton()->addVars('select_contact', ['value' => FALSE]);
+    if (empty($form->_contactID) && $form->_contactID == 0) {
+      CRM_Core_Resources::singleton()->addVars('select_contact', ['value' => TRUE]);
+    }
+    if (!empty($form->_currentMemberships)) {
+      foreach ($form->_currentMemberships as $memType) {
+        $currentMembership = CRM_Member_BAO_Membership::getContactMembership(
+          $form->_contactID,
+          $memType,
+          0,
+          $form->_membershipId,
+          TRUE
+        );
+        $memtypeDetails = civicrm_api3('MembershipType', 'get', [
+          'sequential' => 1,
+          'return' => ["name"],
+          'id' => $memType,
+        ])['values'][0];
+        if (!empty($currentMembership)) {
+          $defaults['num_terms'] = CRM_Continuousmembership_BAO_Continuousmembership::getNumTerms($form->_contactID, $memType);
+          CRM_Core_Resources::singleton()->addVars('num_terms', [$memtypeDetails['name'] => $defaults['num_terms']]);
+        }
       }
     }
+    $form->add('text', 'num_terms', ts('Quantity'), ['size' => 6]);
+    $templatePath = realpath(dirname(__FILE__)."/templates");
+    CRM_Core_Region::instance('page-body')->add(array(
+      'template' => "{$templatePath}/membership.tpl"
+    ));
     if (!empty($defaults['num_terms'])) {
-      $form->add('text', 'num_terms', ts('Quantity'), ['size' => 6]);
-      $templatePath = realpath(dirname(__FILE__)."/templates");
-      CRM_Core_Region::instance('page-body')->add(array(
-        'template' => "{$templatePath}/membership.tpl"
-      ));
       $form->setDefaults($defaults);
     }
   }

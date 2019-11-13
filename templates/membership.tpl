@@ -10,8 +10,24 @@
       $('#num_terms-tr').insertAfter('#priceset');
       if (typeof CRM.vars.num_terms != 'underfined') {
         $.each(CRM.vars.num_terms, function (memType, term) {
-          var msg = '<div class="help" id="cm_alert">Enter ' + term + ' in the Quantity field to directly update your <b> '+ memType +' </b> membership to current status. Note that the amount will also be charged '+ term +' times. </div><br/>';
-          $(msg).appendTo('#cm_help');
+          if (term > 1) {
+            var msg = '<div class="help" id="cm_alert">Enter ' + term + ' in the Quantity field to directly update your <b> '+ memType +' </b> membership to current status. Please note that the total membership fee amount due will reflect your total quantity selected.</div><br/>';
+            $(msg).appendTo('#cm_help');
+          }
+        });
+      }
+      if (typeof CRM.vars.select_contact != 'underfined' && CRM.vars.select_contact.value) {
+        $('#select_contact_id').on('change', function() {
+          $.getJSON(CRM.url("civicrm/ajax/contactmembershipterms", {cid: this.value}))
+          .done(function (result) {
+            $.each(result, function (memType, term) {
+              if (term > 1) {
+                var msg = '<div class="help" id="cm_alert">Enter ' + term + ' in the Quantity field to directly update your <b> '+ memType +' </b> membership to current status. Please note that the total membership fee amount due will reflect your total quantity selected.</div><br/>';
+                $(msg).appendTo('#cm_help');
+                $('#num_terms').val(term);
+              }
+            });
+          });
         });
       }
     });

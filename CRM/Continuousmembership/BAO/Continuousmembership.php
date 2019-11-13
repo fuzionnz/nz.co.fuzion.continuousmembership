@@ -26,6 +26,33 @@ class CRM_Continuousmembership_BAO_Continuousmembership {
   }
 
   /**
+   * Get num terms for all memberships present in the contact.
+   */
+  public static function getNumTermsForExistingMembership($contactId = NULL) {
+    $json = FALSE;
+    if (empty($contactId)) {
+      $json = TRUE;
+      $contactId = CRM_Utils_Type::escape($_GET['cid'], 'Integer');
+    }
+    $existingMembership = civicrm_api3('Membership', 'get', [
+      'sequential' => 1,
+      'contact_id' => $contactId,
+    ]);
+    if (empty($existingMembership['count'])) {
+      return NULL;
+    }
+    $numTerms = [];
+    foreach ($existingMembership['values'] as $membership) {
+      $numTerms[$membership['membership_name']] = self::getNumTerms($contactId, $membership['membership_type_id']);
+    }
+    if (!$json) {
+      return $numTerms;
+    }
+
+    CRM_Utils_JSON::output($numTerms);
+  }
+
+  /**
    * Get num terms required to renew the membership to current.
    */
   public static function getNumTerms($contactId, $memTypeID) {
