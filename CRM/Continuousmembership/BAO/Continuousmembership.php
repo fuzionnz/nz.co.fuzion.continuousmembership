@@ -30,19 +30,23 @@ class CRM_Continuousmembership_BAO_Continuousmembership {
    */
   public static function getNumTermsForExistingMembership($contactId = NULL, $ajax = TRUE) {
     if (empty($contactId)) {
-      $contactId = CRM_Utils_Type::escape($_GET['cid'], 'Integer');
-    }
-    $existingMembership = civicrm_api3('Membership', 'get', [
-      'sequential' => 1,
-      'contact_id' => $contactId,
-    ]);
-    if (empty($existingMembership['count'])) {
-      return NULL;
+      $contactId = CRM_Utils_Type::escape($_GET['cid'], 'Integer', FALSE);
     }
     $numTerms = [];
-    foreach ($existingMembership['values'] as $membership) {
-      $key = $ajax ? $membership['membership_name'] : $membership['membership_type_id'];
-      $numTerms[$key] = self::getNumTerms($contactId, $membership['membership_type_id']);
+    if (!empty($contactId)) {
+      $existingMembership = civicrm_api3('Membership', 'get', [
+        'sequential' => 1,
+        'contact_id' => $contactId,
+      ]);
+      if (!empty($existingMembership['count'])) {
+        foreach ($existingMembership['values'] as $membership) {
+          $key = $ajax ? $membership['membership_name'] : $membership['membership_type_id'];
+          $numTerms[$key] = [
+            'term' => self::getNumTerms($contactId, $membership['membership_type_id']),
+            'end_date' => CRM_Utils_Date::customFormat($membership['end_date']),
+          ];
+        }
+      }
     }
     if (!$ajax) {
       return $numTerms;
